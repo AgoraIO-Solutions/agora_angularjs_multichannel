@@ -18,7 +18,7 @@ class AgoraMultiChanelApp
     // We'll keep track of one client object per Agora channel to join.
     this.clients = [];
     this.numClients = 0;
-    // We need to join one channel for every N (32?) hosts.
+    // We'll track channel state (i.e. remote users).
     this.channels = [];
     this.numChannels = 0;
     this.baseChannelName = "SA-MULTITEST";
@@ -39,15 +39,22 @@ class AgoraMultiChanelApp
     for(i; i < this.maxClients; i++)
     {
       this.clients[i] = AgoraRTC.createClient(this.clientConfig);
-      let currentClient = this.clients[i];      
+      let currentClient = this.clients[i];
+      let currentIndex = i;
 
       /* Each client object will need the same event handlers. */
       // Add the remote publish event
       this.clients[i].on("user-published", 
                          async (user, mediaType) => {
         await currentClient.subscribe(user, mediaType);
-        console.log(" ### CHANNEL1, SUBSCRIBED TO REMOTE's " + mediaType);
-      
+        console.log(" ### SUBSCRIBED IN CHANNEL " + 
+        this.channels[currentIndex].name +
+        ", TO USER " + user.uid.toString() + 
+        ", TO " + mediaType);
+   
+        // Track the users in the current channel. 
+        this.channels[currentIndex].users[user.uid.toString()] = user;
+ 
         if(mediaType === "video")
         {
           const playerDomDiv = document.createElement("div");
@@ -64,10 +71,10 @@ class AgoraMultiChanelApp
           user.audioTrack.play();
         }
       });
-    
+   
       // and remote unpublish event.
       this.clients[i].on("user-unpublished", 
-                         async (user,mediaType) => {
+                         async (user, mediaType) => {
         if(mediaType === "video")
         {
           console.log("### UNSUBSCRIBED USER " + user.uid.toString() + 
@@ -81,6 +88,9 @@ class AgoraMultiChanelApp
           console.log("### UNSUBSCRIBED USER " + user.uid.toString() +
                       "FROM AUDIO ###");
         }
+
+        //Remove the user from the current channel tracking data.
+        delete this.channels[currentIndex].users[user.uid.toString()];
       });   
     }
 
@@ -101,6 +111,8 @@ class AgoraMultiChanelApp
                                            tempChannelName, 
                                            this.token, null);
       console.log("### JOINED: " + tempChannelName + " ###");
+      // We'll use this to track channel state.
+      this.channels[i] = {name: tempChannelName, users: []};
     }
     this.numChannels = i;
   }
@@ -122,7 +134,7 @@ class AgoraMultiChanelApp
       encoderConfig: "120p",
     } );
     await this.clients[publishToIndex].publish(this.localVideoTrack);
-    console.log("### PUBLISHED VIDEO! ###");
+    console.log("### PUBLISHED VIDEO VIDEO TO " + publishToIndex + "! ###");
   }
 
   //
@@ -141,24 +153,37 @@ class AgoraMultiChanelApp
       microphoneId: microphoneId, 
     } );
     await this.clients[publishToIndex].publish(this.localAudioTrack);
-    console.log("### PUBLISHED AUDIO! ###");
+    console.log("### PUBLISHED AUDIO TO " + publishToIndex + "! ###");
   }
 
+  // Returns the index of the first client object with an open channel.
+  getFirstOpenChannel()
+  {
+    let tempCount = 0;
+    for(let i = 0; i < this.channels.length; i++)
+    {
+      tempCount = Object.keys(this.channels[i].users).length;
+      console.log("### CHECKING CHANNEL " + this.channels[i].name +
+      ", WHICH HAS " + tempCount + 
+      " USERS IN IT.");
+      if(tempCount < this.maxUsersPerChannel)
+        return(i);
+    }
+  }
 }
 
 function initializeAngularController()
 {
     /* Initialize the AngularJS controller for the Camera select box. */
     angularApp.controller('multiChannelCtrl', function($scope) {
-    // Define the target client/channel we want to publish into.
-    /* TO-DO: This needs to be based on some logic. */
-    let targetClientIndex = 0;
 
     // Define the event handler for when the user selects a camera.
     $scope.changeSelectedCamera = function() 
     {
       console.log("### SELECTED NEW CAMERA: " + 
                   $scope.cameraSelect.name + " ###");
+      // Define the target client/channel we want to publish into.
+      let targetClientIndex = agoraApp.getFirstOpenChannel();
       agoraApp.publishVideoToChannel($scope.cameraSelect.value, 
                                      targetClientIndex);
     }
@@ -168,6 +193,7 @@ function initializeAngularController()
     {
       console.log("### SELECTED NEW MICROPHONE: " + 
                   $scope.microphoneSelect.name + " ###");
+      let targetClientIndex = agoraApp.getFirstOpenChannel();
       agoraApp.publishAudioToChannel($scope.microphoneSelect.value,
                                      targetClientIndex);
     }
