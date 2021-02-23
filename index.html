@@ -1,0 +1,25 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="utf 8">
+  <title>Infinite Scrolling Example in Angular 1.8.2</title>
+  <script src="https://code.angularjs.org/1.6.9/angular.js"></script>
+  <script src="./sdk/AgoraRTC_N-4.3.0.js"></script>
+</head>  
+
+<body>
+  <div ng-app="multiChannelApp" ng-controller="multiChannelCtrl">
+    <select ng-model="cameraSelect" 
+            ng-options="x.name for x in cameraNames track by x.value" 
+            ng-change="changeSelectedCamera()">
+      <option value="" disabled select>Select a Camera</option>
+    </select>
+
+    <select ng-model="microphoneSelect" 
+            ng-options="x.name for x in microphoneNames track by x.value" 
+            ng-change="changeSelectedMicrophone()">
+      <option value="" disabled select>Select a Microphone</option>
+    </select>
+  </div>
+
+  <script src="./app.js"></script>
