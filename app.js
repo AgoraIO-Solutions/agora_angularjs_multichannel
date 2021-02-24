@@ -13,8 +13,8 @@ class AgoraMultiChanelApp
   {
     this.appId = "20b7c51ff4c644ab80cf5a4e646b0537";
     this.token = null;
-    this.maxClients = 2;
-    this.maxUsersPerChannel = 30;
+    this.maxClients = 4;
+    this.maxUsersPerChannel = 16;
     // We'll keep track of one client object per Agora channel to join.
     this.clients = [];
     this.numClients = 0;
@@ -57,14 +57,14 @@ class AgoraMultiChanelApp
  
         if(mediaType === "video")
         {
-          const playerDomDiv = document.createElement("div");
-          playerDomDiv.id = user.uid.toString();
-	  playerDomDiv.className = "rt";
-          playerDomDiv.style.width = "160px";
-          playerDomDiv.style.height = "120px";
-          document.body.append(playerDomDiv);
-      
-          user.videoTrack.play(playerDomDiv.id);
+	    if (!document.getElementById(user.uid.toString())) {
+	          const playerDomDiv = document.createElement("div");
+	          playerDomDiv.id = user.uid.toString();
+		  playerDomDiv.className = "remote_video";
+	          document.body.append(playerDomDiv);
+	    }
+          // playerDomDiv.id 
+          user.videoTrack.play(user.uid.toString());
         }
       
         if(mediaType === "audio")
@@ -74,6 +74,8 @@ class AgoraMultiChanelApp
       });
    
       // and remote unpublish event.
+	// unpublished is called when users mute. Best not to remove them and instead 
+	/*
       this.clients[i].on("user-unpublished", 
                          async (user, mediaType) => {
         if(mediaType === "video")
@@ -93,6 +95,16 @@ class AgoraMultiChanelApp
         //Remove the user from the current channel tracking data.
         delete this.channels[currentIndex].users[user.uid.toString()];
       });   
+      */
+
+   	this.clients[i].on("user-left", 
+                         async (user) => {
+          const playerDomDiv = document.getElementById(user.uid);
+          playerDomDiv.remove();
+         //Remove the user from the current channel tracking data.
+         delete this.channels[currentIndex].users[user.uid.toString()];
+      });   
+
     }
 
     this.numClients = i;
