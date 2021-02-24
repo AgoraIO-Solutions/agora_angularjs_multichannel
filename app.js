@@ -59,6 +59,7 @@ class AgoraMultiChanelApp
         {
           const playerDomDiv = document.createElement("div");
           playerDomDiv.id = user.uid.toString();
+	  playerDomDiv.className = "rt";
           playerDomDiv.style.width = "160px";
           playerDomDiv.style.height = "120px";
           document.body.append(playerDomDiv);

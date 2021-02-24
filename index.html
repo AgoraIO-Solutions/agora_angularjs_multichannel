@@ -5,9 +5,27 @@
   <title>Infinite Scrolling Example in Angular 1.8.2</title>
   <script src="https://code.angularjs.org/1.6.9/angular.js"></script>
   <script src="./sdk/AgoraRTC_N-4.3.0.js"></script>
+  <style>
+  .ng-scope {
+   	padding: 12px;
+  
+  }
+  .agora_video_player {
+  	    /*border-radius: 15%;*/
+  }
+  .rt {
+ 	background-color:#222;
+  	margin: 6px;
+  	padding: 6px;
+  	display: inline-block;
+  }
+  .main {
+  	background:#222;
+  }
+  </style>
 </head>  
 
-<body>
+<body class="main">
   <div ng-app="multiChannelApp" ng-controller="multiChannelCtrl">
     <select ng-model="cameraSelect" 
             ng-options="x.name for x in cameraNames track by x.value" 
